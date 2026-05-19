@@ -83,7 +83,21 @@ function handleLogin() {
   showToast(`Welcome back, ${user.name}! 👋`, "success");
 
   if (user.role === "admin") {
-    setTimeout(() => window.location.href = "/admin/dashboard", 800);
+    // Submit form tới Spring Security
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/login";  // Spring Security endpoint
+    
+    const u = document.createElement("input");
+    u.type = "hidden"; u.name = "username"; u.value = email;
+    
+    const p = document.createElement("input");
+    p.type = "hidden"; p.name = "password"; p.value = pass;
+    
+    document.body.appendChild(form);
+    form.appendChild(u);
+    form.appendChild(p);
+    form.submit();
     return;
   }
 

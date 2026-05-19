@@ -9,31 +9,39 @@ async function loadBooks() {
     if (!res.ok) throw new Error("API error " + res.status);
     const data = await res.json();
 
-    BOOKS = data.map(b => ({
-      id:            b.id,
-      title:         b.title        || "Untitled",
-      author:        b.author       || "Unknown",
-      category:      b.category     || "General",
-      description:   b.description  || "",
-      thumbnail:     b.thumbnail    || "",
-      isbn:          b.isbn         || "",
-      price:         Math.round(b.price),
-      originalPrice: null,   // add this column to DB later if you want sale prices
-      stock:         b.stock,
-      rating:        parseFloat(b.rating.toFixed(1)),
-      reviews:       b.reviews,
-      emoji:         categoryEmoji(b.category),
-      isNew:         b.id > (data.length - 10),   // last 10 inserted = "new"
-      isBestseller:  b.reviews > 200,
-    }));
+    BOOKS = data.map(b => {
+      const price = Math.round(b.price) || 0;
+      const hasSale = price > 0 && Math.random() < 0.3;
+      const discountPct = hasSale ? (Math.floor(Math.random() * 4) + 1) * 10 : 0;
+      const originalPrice = hasSale
+        ? Math.round(price / (1 - discountPct / 100) / 1000) * 1000
+        : null;
+
+      return {
+        id:            b.id,
+        title:         b.title        || "Untitled",
+        author:        b.author       || "Unknown",
+        category:      b.category     || "General",
+        description:   b.description  || "",
+        thumbnail:     b.thumbnail    || "",
+        isbn:          b.isbn         || "",
+        price,
+        originalPrice,
+        stock:         b.stock        || 0,
+        rating:        parseFloat((b.rating || 0).toFixed(1)),
+        reviews:       b.reviews      || 0,
+        emoji:         categoryEmoji(b.category),
+        isNew:         b.id > (data.length - 10),
+        isBestseller:  b.reviews > 200,
+      };
+    });
 
     document.dispatchEvent(new Event("booksLoaded"));
   } catch (err) {
     console.error("Failed to load books:", err);
-    document.dispatchEvent(new Event("booksLoaded")); // still fire so page renders
+    document.dispatchEvent(new Event("booksLoaded"));
   }
 }
-
 function categoryEmoji(cat) {
   const map = {
     "Fiction": "📚", "Science": "🔬", "History": "🏛️",
@@ -65,7 +73,6 @@ function getBestsellers(limit = 8) {
 
 function filterBooks({ category, minPrice, maxPrice, search, sort, sale } = {}) {
   let results = [...BOOKS];
-  if (category)  results = results.filter(b => b.category?.toLowerCase().includes(category.toLowerCase()));
   if (minPrice)  results = results.filter(b => b.price >= parseInt(minPrice));
   if (maxPrice)  results = results.filter(b => b.price <= parseInt(maxPrice));
   if (search) {
@@ -87,3 +94,9 @@ function filterBooks({ category, minPrice, maxPrice, search, sort, sale } = {}) 
 
 // Kick off immediately
 loadBooks();
+
+let COUPONS = JSON.parse(localStorage.getItem("pt_coupons") || JSON.stringify([
+    { code: "BOOK40",    type: "percent", value: 40, minOrder: 0,      description: "Giảm 40% tất cả sách" },
+    { code: "SUMMER20",  type: "percent", value: 20, minOrder: 300000, description: "Giảm 20% đơn trên ₫300k" },
+    { code: "WELCOME50", type: "fixed",   value: 50000, minOrder: 200000, description: "Giảm ₫50k đơn trên ₫200k" },
+]));

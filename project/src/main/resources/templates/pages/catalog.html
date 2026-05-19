@@ -269,9 +269,16 @@
         ?.value.trim();
       const search = searchInputVal || params.get("search") || "";
 
-      let results = filterBooks({ sort, sale, search, category: params.get("category") || undefined });
-      if (checkedCats.length > 0)
-        results = results.filter((b) => checkedCats.includes(b.category));
+      // Lấy checkbox
+      const activeCats = checkedCats; 
+
+      let results = filterBooks({ sort, sale, search });
+      if (activeCats.length > 0) {
+          results = results.filter(b => 
+              activeCats.some(cat => b.category?.toLowerCase() === cat.toLowerCase())
+          );
+      }
+
       if (minPrice) results = results.filter((b) => b.price >= minPrice);
       if (maxPrice) results = results.filter((b) => b.price <= maxPrice);
       if (newOnly) results = results.filter((b) => b.isNew);
