@@ -146,11 +146,29 @@
       }).join("") || `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">No orders found</td></tr>`;
     }
 
+    const VALID_TRANSITIONS = {
+      "Pending": ["Confirmed", "Cancelled"],
+      "Confirmed": ["Shipping"],
+      "Shipping": ["Delivered"],
+      "Delivered": [],
+      "Cancelled": [],
+    };
+
     function updateStatus(orderId, newStatus) {
       const orders = JSON.parse(localStorage.getItem("pt_orders") || "[]");
-      const order = orders.find(o => o.id === orderId);
-      if (order) {
-        order.status = newStatus;
+      const order = getAllOrders().find(o => o.id === orderId);
+      if (!order) return;
+
+      const allowed = VALID_TRANSITIONS[order.status] || [];
+      if (!allowed.includes(newStatus)) {
+        showToast(`Không thể chuyển từ "${order.status}" → "${newStatus}"`, "error");
+        renderOrders(); // reset select về giá trị cũ
+        return;
+      }
+
+      const savedOrder = orders.find(o => o.id === orderId);
+      if (savedOrder) {
+        savedOrder.status = newStatus;
         localStorage.setItem("pt_orders", JSON.stringify(orders));
       }
       showToast(`Order ${orderId} → ${newStatus}`, "success");
