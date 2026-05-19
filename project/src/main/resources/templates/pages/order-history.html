@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders — PageTurn</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../../static/css/style.css">
+</head>
+
+<body>
+  <div id="toast-container"></div>
+  <div id="auth-modal" class="modal-overlay hidden">
+    <div class="modal-box auth-box">
+      <button class="modal-close" onclick="closeAuth()">×</button>
+      <div id="auth-content">
+        <div class="auth-tabs">
+          <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+          <button class="auth-tab" onclick="switchTab('register')">Register</button>
+        </div>
+        <div id="login-form" class="auth-form">
+          <h2 class="auth-title">Sign in to view orders</h2>
+          <div class="form-group"><label>Email</label><input type="email" id="login-email"
+              oninput="clearErr('login-email')"><span class="field-err" id="login-email-err"></span></div>
+          <div class="form-group"><label>Password</label><input type="password" id="login-pass"
+              oninput="clearErr('login-pass')"><span class="field-err" id="login-pass-err"></span></div>
+          <div class="form-row"><label class="checkbox-label"><input type="checkbox" id="remember"> Remember
+              me</label><a href="#" class="link-small" onclick="showForgotPassword()">Forgot?</a></div>
+          <button class="btn-primary btn-full" onclick="handleLogin()">Sign In</button>
+        </div>
+        <div id="register-form" class="auth-form hidden">
+          <h2 class="auth-title">Create account</h2>
+          <div class="form-group"><label>Full Name</label><input type="text" id="reg-name"
+              oninput="clearErr('reg-name')"><span class="field-err" id="reg-name-err"></span></div>
+          <div class="form-group"><label>Email</label><input type="email" id="reg-email"
+              oninput="clearErr('reg-email')"><span class="field-err" id="reg-email-err"></span></div>
+          <div class="form-group"><label>Phone</label><input type="tel" id="reg-phone"
+              oninput="clearErr('reg-phone')"><span class="field-err" id="reg-phone-err"></span></div>
+          <div class="form-group"><label>Password</label><input type="password" id="reg-pass"
+              oninput="clearErr('reg-pass')"><span class="field-err" id="reg-pass-err"></span></div>
+          <button class="btn-primary btn-full" onclick="handleRegister()">Create Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="cart-sidebar" class="cart-overlay hidden">
+    <div class="cart-panel">
+      <div class="cart-header">
+        <h3>Cart (<span id="cart-count">0</span>)</h3><button onclick="toggleCart()">×</button>
+      </div>
+      <div id="cart-items" class="cart-items"></div>
+      <div class="cart-footer">
+        <div class="cart-coupon"><input type="text" id="coupon-input" placeholder="Coupon code"><button
+            onclick="applyCoupon()">Apply</button></div>
+        <div class="cart-totals">
+          <div class="total-row"><span>Total</span><span id="cart-total">₫0</span></div>
+        </div>
+        <button class="btn-primary btn-full" onclick="goToCheckout()">Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-top">
+      <div class="container"><span class="header-promo">📦 Free shipping on orders over ₫500,000</span>
+        <div class="header-links">
+          <a href="order-history.html" style="color:#fff">My Orders</a>
+          <span id="nav-auth-links"><a href="#" onclick="openAuth('login')">Sign In</a><a href="#"
+              onclick="openAuth('register')" class="link-highlight">Register</a></span>
+          <span id="nav-user-links" class="hidden"><span class="nav-username" id="nav-username"></span><a href="#"
+              onclick="handleLogout()">Sign Out</a></span>
+        </div>
+      </div>
+    </div>
+    <nav class="navbar">
+      <div class="container nav-inner">
+        <a href="../index.html" class="logo"><span class="logo-icon">📖</span><span
+            class="logo-text">PageTurn</span></a>
+        <div class="search-bar"><input type="text" id="search-input" placeholder="Search books…"
+            onkeydown="if(event.key==='Enter')doSearch()"><button class="search-btn" onclick="doSearch()"><svg
+              width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg></button></div>
+        <div class="nav-actions"><button class="icon-btn cart-btn" onclick="toggleCart()"><svg width="20" height="20"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg><span class="cart-badge" id="cart-badge">0</span></button></div>
+      </div>
+      <div class="nav-categories container">
+        <a href="catalog.html?cat=fiction">Fiction</a><a href="catalog.html?cat=nonfiction">Non-Fiction</a><a
+          href="catalog.html?cat=science">Science</a><a href="catalog.html?cat=history">History</a><a
+          href="catalog.html?cat=selfhelp">Self-Help</a><a href="catalog.html?cat=biography">Biography</a><a
+          href="catalog.html?sale=true" class="sale-link">🔥 Sale</a>
+      </div>
+    </nav>
+  </header>
+
+  <div class="page-banner">
+    <div class="container">
+      <div class="breadcrumb"><a href="../index.html">Home</a> › My Orders</div>
+      <h1>My Orders</h1>
+      <p>Track and manage your orders</p>
+    </div>
+  </div>
+
+  <div class="container" style="padding-top:40px;padding-bottom:60px;max-width:900px">
+    <!-- Status filter tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap">
+      <button class="filter-tab-btn active" onclick="filterOrders('all', this)">All Orders</button>
+      <button class="filter-tab-btn" onclick="filterOrders('Pending', this)">Pending</button>
+      <button class="filter-tab-btn" onclick="filterOrders('Confirmed', this)">Confirmed</button>
+      <button class="filter-tab-btn" onclick="filterOrders('Shipping', this)">Shipping</button>
+      <button class="filter-tab-btn" onclick="filterOrders('Delivered', this)">Delivered</button>
+      <button class="filter-tab-btn" onclick="filterOrders('Cancelled', this)">Cancelled</button>
+    </div>
+
+    <style>
+      .filter-tab-btn {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 8px 18px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .filter-tab-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .filter-tab-btn.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+
+      /* Timeline */
+      .order-timeline {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin: 16px 0 8px;
+      }
+
+      .timeline-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        position: relative;
+      }
+
+      .timeline-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: var(--border);
+        z-index: 0;
+      }
+
+      .timeline-step.done:not(:last-child)::after {
+        background: var(--accent);
+      }
+
+      .step-dot {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--bg-alt);
+        border: 2px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .timeline-step.done .step-dot {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .timeline-step.current .step-dot {
+        background: var(--accent-light);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .step-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 5px;
+        text-align: center;
+      }
+
+      .timeline-step.done .step-label,
+      .timeline-step.current .step-label {
+        color: var(--accent);
+        font-weight: 500;
+      }
+    </style>
+
+    <div id="orders-container">
+      <div class="orders-list" id="orders-list"></div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-bottom">
+      <div class="container"><span>© 2025 PageTurn Bookstore</span></div>
+    </div>
+  </footer>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    // Add demo orders for demonstration if none exist
+    function initDemoOrders() {
+      const existing = JSON.parse(localStorage.getItem("pt_orders") || "[]");
+      if (existing.length === 0) {
+        const demo = [
+          {
+            id: "ORD-1748001234",
+            date: "15/04/2025",
+            status: "Delivered",
+            paymentMethod: "cod",
+            items: [
+              { id: 1, qty: 1, book: BOOKS[0] },
+              { id: 2, qty: 2, book: BOOKS[1] }
+            ],
+            subtotal: 647000,
+            discount: 0,
+            shipping: 0,
+            total: 647000,
+            shippingInfo: { name: "Test User", phone: "0987654321", city: "Hồ Chí Minh" }
+          },
+          {
+            id: "ORD-1748005678",
+            date: "28/04/2025",
+            status: "Shipping",
+            paymentMethod: "card",
+            items: [
+              { id: 3, qty: 1, book: BOOKS[2] }
+            ],
+            subtotal: 299000,
+            discount: 0,
+            shipping: 30000,
+            total: 329000,
+            shippingInfo: { name: "Test User", phone: "0987654321", city: "Hà Nội" }
+          },
+          {
+            id: "ORD-1748009999",
+            date: "03/05/2025",
+            status: "Pending",
+            paymentMethod: "cod",
+            items: [
+              { id: 4, qty: 1, book: BOOKS[3] },
+              { id: 12, qty: 1, book: BOOKS[11] }
+            ],
+            subtotal: 478000,
+            discount: 0,
+            shipping: 30000,
+            total: 508000,
+            shippingInfo: { name: "Test User", phone: "0987654321", city: "Đà Nẵng" }
+          }
+        ];
+        localStorage.setItem("pt_orders", JSON.stringify(demo));
+      }
+    }
+
+    const STATUS_STEPS = ["Pending", "Confirmed", "Shipping", "Delivered"];
+
+    function getStepIndex(status) {
+      const i = STATUS_STEPS.indexOf(status);
+      return i === -1 ? 0 : i;
+    }
+
+    function renderTimeline(status) {
+      if (status === "Cancelled") return `<div style="font-size:13px;color:var(--danger);font-weight:500;margin:12px 0">❌ Order Cancelled</div>`;
+      const current = getStepIndex(status);
+      return `<div class="order-timeline">` + STATUS_STEPS.map((step, i) => {
+        const cls = i < current ? "done" : i === current ? "current" : "";
+        const icons = ["📋", "✓", "🚚", "✓"];
+        return `<div class="timeline-step ${cls}">
+      <div class="step-dot">${icons[i]}</div>
+      <div class="step-label">${step}</div>
+    </div>`;
+      }).join("") + `</div>`;
+    }
+
+    function renderOrders(filterStatus = "all") {
+      initDemoOrders();
+      const orders = JSON.parse(localStorage.getItem("pt_orders") || "[]");
+      const filtered = filterStatus === "all" ? orders : orders.filter(o => o.status === filterStatus);
+      const list = document.getElementById("orders-list");
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div style="text-align:center;padding:80px;color:var(--text-muted)">
+      <div style="font-size:64px;margin-bottom:20px">📭</div>
+      <h3 style="font-family:var(--font-serif);margin-bottom:8px">No orders found</h3>
+      <p style="margin-bottom:24px">You have no ${filterStatus !== "all" ? filterStatus.toLowerCase() + " " : ""}orders yet.</p>
+      <a href="catalog.html" class="btn-primary">Start Shopping</a>
+    </div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map((order, idx) => {
+        const statusClass = {
+          Pending: "status-pending", Confirmed: "status-confirmed",
+          Shipping: "status-shipping", Delivered: "status-delivered", Cancelled: "status-cancelled"
+        }[order.status] || "status-pending";
+
+        const itemsHtml = order.items.map(item => {
+          const book = item.book || getBookById(item.id);
+          if (!book) return "";
+          return `<div class="order-item">
+        <div class="order-item-img">${book.emoji || "📚"}</div>
+        <div class="order-item-info">
+          <h4>${book.title}</h4>
+          <p>${book.author} · Qty: ${item.qty}</p>
+        </div>
+        <div class="order-item-price">${formatPrice((book.price || 0) * item.qty)}</div>
+      </div>`;
+        }).join("");
+
+        const canCancel = order.status === "Pending";
+
+        return `<div class="order-card" id="order-${idx}">
+      <div class="order-head">
+        <div>
+          <div class="order-id">Order ${order.id}</div>
+          <div class="order-date">Placed on ${order.date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="order-status ${statusClass}">${order.status}</span>
+          <span style="font-size:13px;color:var(--text-muted)">${order.paymentMethod?.toUpperCase() || "COD"}</span>
+        </div>
+      </div>
+      <div class="order-body">
+        ${renderTimeline(order.status)}
+        ${itemsHtml}
+      </div>
+      <div class="order-foot">
+        <div>
+          <div style="font-size:13px;color:var(--text-muted)">Deliver to: ${order.shippingInfo?.name || "—"}, ${order.shippingInfo?.city || ""}</div>
+          <div class="order-total">Total: ${formatPrice(order.total || 0)}</div>
+        </div>
+        <div class="order-actions">
+          ${canCancel ? `<button class="btn-outline btn-sm" onclick="cancelOrder(${idx})" style="color:var(--danger);border-color:var(--danger)">Cancel Order</button>` : ""}
+          <button class="btn-ghost btn-sm" onclick="showToast('Invoice download coming soon', 'info')">Invoice</button>
+          <a href="catalog.html" class="btn-primary btn-sm">Buy Again</a>
+        </div>
+      </div>
+    </div>`;
+      }).join("");
+    }
+
+    function filterOrders(status, btn) {
+      document.querySelectorAll(".filter-tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderOrders(status);
+    }
+
+    function cancelOrder(idx) {
+      const orders = JSON.parse(localStorage.getItem("pt_orders") || "[]");
+      // Find the actual index in the full orders array
+      const allFiltered = orders;
+      if (allFiltered[idx] && allFiltered[idx].status === "Pending") {
+        if (!confirm("Are you sure you want to cancel this order?")) return;
+        allFiltered[idx].status = "Cancelled";
+        localStorage.setItem("pt_orders", JSON.stringify(allFiltered));
+        showToast("Order cancelled successfully", "info");
+        renderOrders("all");
+        document.querySelector(".filter-tab-btn").classList.add("active");
+      }
+    }
+
+    renderOrders();
+  </script>
+</body>
+
+</html>

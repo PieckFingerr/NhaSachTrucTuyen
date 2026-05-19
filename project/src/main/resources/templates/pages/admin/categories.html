@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <th:block th:replace="~{fragments/admin-layout :: head('Categories — Admin | PageTurn')}" />
+</head>
+
+<body>
+  <!-- Category Modal -->
+  <div id="cat-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="width:440px;padding:36px">
+      <button class="modal-close" onclick="closeCatModal()">×</button>
+      <h2 class="auth-title" id="cat-modal-title">Add Category</h2>
+      <div class="form-group"><label>Name *</label><input type="text" id="cat-name" oninput="clearErr('cat-name')"><span
+          class="field-err" id="cat-name-err"></span></div>
+      <div class="form-group"><label>Icon (emoji)</label><input type="text" id="cat-icon" placeholder="📚"
+          maxlength="2"></div>
+      <div class="form-group"><label>Description</label><textarea id="cat-desc" rows="2"
+          style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;outline:none;font-family:inherit"></textarea>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:16px">
+        <button class="btn-primary btn-full" onclick="saveCat()">Save</button>
+        <button class="btn-ghost" onclick="closeCatModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <th:block th:replace="~{fragments/admin-layout :: sidebar('categories')}" />
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1>Category Management</h1><button class="btn-primary" onclick="openCatModal()">+ Add Category</button>
+    </div>
+    <div class="admin-content">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px" id="cat-grid"></div>
+    </div>
+  </main>
+  </div>
+  </div>
+
+  <th:block th:replace="~{fragments/admin-layout :: scripts}" />
+
+  <script src="/js/data.js"></script>
+  <script src="/js/cart.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+
+
+    let cats = JSON.parse(localStorage.getItem("pt_categories") || JSON.stringify([
+      { id: 1, name: "Fiction", icon: "📚", desc: "Novels, short stories, and literary fiction", count: 1240 },
+      { id: 2, name: "Non-Fiction", icon: "📖", desc: "True stories, essays, and factual works", count: 620 },
+      { id: 3, name: "Science", icon: "🔬", desc: "Physics, biology, chemistry, and more", count: 820 },
+      { id: 4, name: "History", icon: "🏛️", desc: "World history, civilizations, and events", count: 640 },
+      { id: 5, name: "Self-Help", icon: "🌱", desc: "Personal development and productivity", count: 510 },
+      { id: 6, name: "Biography", icon: "👤", desc: "Life stories of remarkable people", count: 290 },
+      { id: 7, name: "Business", icon: "💼", desc: "Entrepreneurship, finance, and management", count: 380 },
+      { id: 8, name: "Children", icon: "🌈", desc: "Books for young readers", count: 380 },
+    ]));
+    let editingCatId = null;
+
+    function renderCats() {
+      document.getElementById("cat-grid").innerHTML = cats.map(c => `
+    <div class="admin-table-wrap" style="padding:24px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="font-size:32px">${c.icon}</div>
+        <div>
+          <h3 style="font-size:16px;margin-bottom:2px">${c.name}</h3>
+          <div style="font-size:12px;color:var(--text-muted)">${c.count} books</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">${c.desc}</p>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary btn-sm" onclick="editCat(${c.id})">Edit</button>
+        <button class="btn-ghost btn-sm" onclick="deleteCat(${c.id})" style="color:var(--danger)">Delete</button>
+        <a href="/catalog?category=${c.name}" class="btn-ghost btn-sm">View →</a>
+      </div>
+    </div>
+  `).join("");
+    }
+
+    function openCatModal(id = null) {
+      editingCatId = id;
+      if (id) {
+        const c = cats.find(x => x.id === id);
+        document.getElementById("cat-modal-title").textContent = "Edit Category";
+        document.getElementById("cat-name").value = c.name;
+        document.getElementById("cat-icon").value = c.icon;
+        document.getElementById("cat-desc").value = c.desc;
+      } else {
+        document.getElementById("cat-modal-title").textContent = "Add Category";
+        ["cat-name", "cat-icon", "cat-desc"].forEach(id => document.getElementById(id).value = "");
+      }
+      document.getElementById("cat-modal").classList.remove("hidden");
+    }
+    function editCat(id) { openCatModal(id); }
+    function closeCatModal() { document.getElementById("cat-modal").classList.add("hidden"); }
+
+    function saveCat() {
+      const name = document.getElementById("cat-name").value.trim();
+      if (!name) { showFieldErr("cat-name", "Name is required"); return; }
+      const cat = {
+        id: editingCatId || (Math.max(0, ...cats.map(c => c.id)) + 1),
+        name,
+        icon: document.getElementById("cat-icon").value || "📚",
+        desc: document.getElementById("cat-desc").value,
+        count: editingCatId ? cats.find(c => c.id === editingCatId)?.count || 0 : 0,
+      };
+      if (editingCatId) { const i = cats.findIndex(c => c.id === editingCatId); cats[i] = cat; showToast("Category updated", "success"); }
+      else { cats.push(cat); showToast("Category added", "success"); }
+      localStorage.setItem("pt_categories", JSON.stringify(cats));
+      closeCatModal(); renderCats();
+    }
+    function deleteCat(id) {
+      const c = cats.find(x => x.id === id);
+      if (!confirm(`Delete category "${c?.name}"?`)) return;
+      cats = cats.filter(x => x.id !== id);
+      localStorage.setItem("pt_categories", JSON.stringify(cats));
+      showToast("Category deleted", "info"); renderCats();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => { if (checkAdminAccess()) renderCats(); });
+    document.getElementById("cat-modal")?.addEventListener("click", function (e) { if (e.target === this) closeCatModal(); });
+  </script>
+</body>
+
+</html>

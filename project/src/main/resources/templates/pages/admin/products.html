@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <th:block th:replace="~{fragments/admin-layout :: head('Orders — Admin | PageTurn')}" />
+</head>
+
+<body>
+  <!-- Product Modal -->
+  <div id="product-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="width:600px;padding:36px;max-height:90vh;overflow-y:auto">
+      <button class="modal-close" onclick="closeProductModal()">×</button>
+      <h2 class="auth-title" id="product-modal-title">Add New Product</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group" style="grid-column:1/-1"><label>Title *</label><input type="text" id="p-title"
+            oninput="clearErr('p-title')"><span class="field-err" id="p-title-err"></span></div>
+        <div class="form-group"><label>Author *</label><input type="text" id="p-author"
+            oninput="clearErr('p-author')"><span class="field-err" id="p-author-err"></span></div>
+        <div class="form-group"><label>Category *</label>
+          <select id="p-category">
+            <option>Fiction</option>
+            <option>Non-Fiction</option>
+            <option>Science</option>
+            <option>History</option>
+            <option>Self-Help</option>
+            <option>Biography</option>
+            <option>Business</option>
+            <option>Children</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Price (₫) *</label><input type="number" id="p-price" min="0"
+            oninput="clearErr('p-price')"><span class="field-err" id="p-price-err"></span></div>
+        <div class="form-group"><label>Original Price (₫)</label><input type="number" id="p-orig-price" min="0"
+            placeholder="Leave empty if no discount"></div>
+        <div class="form-group"><label>Stock Quantity *</label><input type="number" id="p-stock" min="0"
+            oninput="clearErr('p-stock')"><span class="field-err" id="p-stock-err"></span></div>
+        <div class="form-group"><label>Emoji Icon</label><input type="text" id="p-emoji" placeholder="📚" maxlength="2">
+        </div>
+        <div class="form-group" style="grid-column:1/-1"><label>Description</label><textarea id="p-desc" rows="3"
+            style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;resize:vertical;outline:none;font-family:inherit"></textarea>
+        </div>
+        <div class="form-group"><label class="checkbox-label" style="margin-top:8px"><input type="checkbox" id="p-new">
+            Mark as New Arrival</label></div>
+        <div class="form-group"><label class="checkbox-label" style="margin-top:8px"><input type="checkbox"
+              id="p-bestseller"> Mark as Bestseller</label></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:20px">
+        <button class="btn-primary btn-full" onclick="saveProduct()">Save Product</button>
+        <button class="btn-ghost" onclick="closeProductModal()" style="flex-shrink:0">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <th:block th:replace="~{fragments/admin-layout :: sidebar('products')}" />
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1>Product Management</h1>
+      <button class="btn-primary" onclick="openProductModal()">+ Add New Product</button>
+    </div>
+    <div class="admin-content">
+      <!-- Filters -->
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="prod-search" placeholder="Search products…"
+          style="padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;outline:none;width:240px"
+          oninput="renderProducts()">
+        <select id="prod-cat-filter" onchange="renderProducts()"
+          style="padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;outline:none">
+          <option value="">All Categories</option>
+          <option>Fiction</option>
+          <option>Non-Fiction</option>
+          <option>Science</option>
+          <option>History</option>
+          <option>Self-Help</option>
+          <option>Biography</option>
+          <option>Business</option>
+        </select>
+        <select id="prod-stock-filter" onchange="renderProducts()"
+          style="padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;outline:none">
+          <option value="">All Stock</option>
+          <option value="low">Low Stock (&lt;5)</option>
+          <option value="out">Out of Stock</option>
+        </select>
+        <span style="font-size:13px;color:var(--text-muted)" id="prod-count"></span>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Orig. Price</th>
+              <th>Stock</th>
+              <th>Rating</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="products-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  </div>
+  </div>
+  <th:block th:replace="~{fragments/admin-layout :: scripts}" />
+  <script>
+
+    // Editable products list (copies from BOOKS)
+    let products = [];
+    document.addEventListener("booksLoaded", () => {
+      products = JSON.parse(localStorage.getItem("pt_products") || JSON.stringify(BOOKS));
+      if (checkAdminAccess()) renderProducts();
+    });
+    let editingId = null;
+
+
+    function adminLogout() {
+      localStorage.removeItem("pt_user");
+      window.location.href = "/";
+    }
+
+    function renderProducts() {
+      const search = document.getElementById("prod-search").value.toLowerCase();
+      const cat = document.getElementById("prod-cat-filter").value;
+      const stockFilter = document.getElementById("prod-stock-filter").value;
+
+      let filtered = products;
+      if (search) filtered = filtered.filter(p => p.title.toLowerCase().includes(search) || p.author.toLowerCase().includes(search));
+      if (cat) filtered = filtered.filter(p => p.category === cat);
+      if (stockFilter === "low") filtered = filtered.filter(p => p.stock > 0 && p.stock < 5);
+      if (stockFilter === "out") filtered = filtered.filter(p => p.stock === 0);
+
+      document.getElementById("prod-count").textContent = `${filtered.length} products`;
+
+      const tbody = document.getElementById("products-table");
+      tbody.innerHTML = filtered.map(p => {
+        const stockBadge = p.stock === 0 ? `<span class="badge badge-danger">Out of Stock</span>` :
+          p.stock < 5 ? `<span class="badge badge-warning">${p.stock} left</span>` :
+            `<span class="badge badge-success">${p.stock}</span>`;
+        const discount = p.originalPrice ? Math.round((1 - p.price / p.originalPrice) * 100) : 0;
+        return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:24px">${p.emoji}</span>
+          <div>
+            <div style="font-weight:600;font-size:14px">${p.title}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${p.author}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge badge-info">${p.category}</span></td>
+      <td><strong>${formatPrice(p.price)}</strong></td>
+      <td>${p.originalPrice ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px">${formatPrice(p.originalPrice)}</span> <span style="color:var(--danger);font-size:12px">-${discount}%</span>` : "—"}</td>
+      <td>${stockBadge}</td>
+      <td>★ ${p.rating} <span style="color:var(--text-muted);font-size:12px">(${p.reviews})</span></td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          ${p.isNew ? `<span class="badge badge-success">New</span>` : ""}
+          ${p.isBestseller ? `<span class="badge badge-info">Bestseller</span>` : ""}
+          ${!p.isNew && !p.isBestseller ? `<span style="color:var(--text-muted);font-size:12px">Standard</span>` : ""}
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn-primary btn-sm" onclick="editProduct(${p.id})">Edit</button>
+          <button class="btn-ghost btn-sm" onclick="deleteProduct(${p.id})" style="color:var(--danger)">Delete</button>
+        </div>
+      </td>
+    </tr>`;
+      }).join("");
+    }
+
+    function openProductModal(id = null) {
+      editingId = id;
+      const modal = document.getElementById("product-modal");
+      const title = document.getElementById("product-modal-title");
+      if (id) {
+        const p = products.find(x => x.id === id);
+        if (!p) return;
+        title.textContent = "Edit Product";
+        document.getElementById("p-title").value = p.title;
+        document.getElementById("p-author").value = p.author;
+        document.getElementById("p-category").value = p.category;
+        document.getElementById("p-price").value = p.price;
+        document.getElementById("p-orig-price").value = p.originalPrice || "";
+        document.getElementById("p-stock").value = p.stock;
+        document.getElementById("p-emoji").value = p.emoji || "📚";
+        document.getElementById("p-desc").value = p.description || "";
+        document.getElementById("p-new").checked = p.isNew;
+        document.getElementById("p-bestseller").checked = p.isBestseller;
+      } else {
+        title.textContent = "Add New Product";
+        ["p-title", "p-author", "p-price", "p-orig-price", "p-stock", "p-desc"].forEach(id => document.getElementById(id).value = "");
+        document.getElementById("p-emoji").value = "📚";
+        document.getElementById("p-new").checked = false;
+        document.getElementById("p-bestseller").checked = false;
+      }
+      modal.classList.remove("hidden");
+    }
+
+    function editProduct(id) { openProductModal(id); }
+
+    function closeProductModal() {
+      document.getElementById("product-modal").classList.add("hidden");
+      editingId = null;
+    }
+
+    function saveProduct() {
+      const title = document.getElementById("p-title").value.trim();
+      const author = document.getElementById("p-author").value.trim();
+      const price = parseInt(document.getElementById("p-price").value);
+      const stock = parseInt(document.getElementById("p-stock").value);
+      let valid = true;
+
+      if (!title) { showFieldErr("p-title", "Title is required"); valid = false; }
+      if (!author) { showFieldErr("p-author", "Author is required"); valid = false; }
+      if (!price || price < 0) { showFieldErr("p-price", "Valid price required (cannot be negative)"); valid = false; }
+      if (isNaN(stock) || stock < 0) { showFieldErr("p-stock", "Valid stock quantity required"); valid = false; }
+      if (!valid) return;
+
+      const origPrice = parseInt(document.getElementById("p-orig-price").value) || null;
+      const product = {
+        id: editingId || (Math.max(...products.map(p => p.id)) + 1),
+        title,
+        author,
+        category: document.getElementById("p-category").value,
+        price,
+        originalPrice: origPrice,
+        stock,
+        emoji: document.getElementById("p-emoji").value || "📚",
+        description: document.getElementById("p-desc").value,
+        isNew: document.getElementById("p-new").checked,
+        isBestseller: document.getElementById("p-bestseller").checked,
+        rating: 4.5,
+        reviews: 0,
+      };
+
+      if (editingId) {
+        const idx = products.findIndex(p => p.id === editingId);
+        products[idx] = product;
+        showToast("Product updated successfully!", "success");
+      } else {
+        products.push(product);
+        showToast("Product added successfully!", "success");
+      }
+
+      localStorage.setItem("pt_products", JSON.stringify(products));
+      closeProductModal();
+      renderProducts();
+    }
+
+    function deleteProduct(id) {
+      const p = products.find(x => x.id === id);
+      if (!confirm(`Delete "${p?.title}"? This cannot be undone.`)) return;
+      products = products.filter(x => x.id !== id);
+      localStorage.setItem("pt_products", JSON.stringify(products));
+      showToast("Product deleted", "info");
+      renderProducts();
+    }
+
+    document.getElementById("product-modal")?.addEventListener("click", function (e) {
+      if (e.target === this) closeProductModal();
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <th:block th:replace="~{fragments/layout :: head('Trang chủ — Nhà sách')}" />
+</head>
+
+<body>
+
+  <th:block th:replace="~{fragments/layout :: modals}" />
+  <th:block th:replace="~{fragments/layout :: header}" />
+
+  <!-- MAIN CONTENT -->
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <div class="container hero-inner">
+        <div class="hero-text">
+          <span class="hero-badge">Mới ra mắt 2026</span>
+          <h1 class="hero-title">
+            Những cuốn sách<br /><em>đánh thức</em> bạn.
+          </h1>
+          <p class="hero-desc">
+            Khám phá hàng ngàn cuốn sách thuộc mọi thể loại. Từ những tác phẩm
+            kinh điển đến những đầu sách bestseller mới nhất — cuốn sách tuyệt
+            vời tiếp theo của bạn đang chờ đợi ở đây.
+          </p>
+          <div class="hero-actions">
+            <a href="/catalog" class="btn-primary btn-lg">Duyệt tất cả sách</a>
+            <a href="/catalog?sale=true" class="btn-outline btn-lg">Xem khuyến mãi</a>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="book-stack">
+            <div class="book b1"><span>The Midnight Library</span></div>
+            <div class="book b2"><span>Atomic Habits</span></div>
+            <div class="book b3"><span>Sapiens</span></div>
+            <div class="book b4"><span>Project Hail Mary</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLASH SALE SECTION -->
+    <section class="fs-section">
+      <div class="container">
+        <!-- Header bar -->
+        <div class="fs-header">
+          <div class="fs-title-wrap">
+            <span class="fs-logo">FLA<span class="fs-bolt">⚡</span>H SALE</span>
+            <div class="fs-ending">
+              <span class="fs-ending-label">Kết thúc trong</span>
+              <div class="fs-timer">
+                <div class="fs-block"><span id="fs-h">00</span></div>
+                <span class="fs-colon">:</span>
+                <div class="fs-block"><span id="fs-m">00</span></div>
+                <span class="fs-colon">:</span>
+                <div class="fs-block"><span id="fs-s">00</span></div>
+              </div>
+            </div>
+          </div>
+          <a href="/catalog?sale=true" class="fs-viewall">Xem tất cả <span>›</span></a>
+        </div>
+        <!-- Sách scroll ngang -->
+        <div class="fs-books-wrap">
+          <div class="fs-books" id="fs-books"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORIES -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Duyệt theo thể loại</h2>
+          <a href="/catalog" class="view-all">Xem tất cả →</a>
+        </div>
+        <div class="category-grid">
+          <a href="/catalog?category=Fiction" class="cat-card cat-fiction">
+            <div class="cat-icon">📚</div>
+            <h3>Giả tưởng</h3>
+            <span>1,240 books</span>
+          </a>
+
+          <a href="/catalog?category=Science" class="cat-card cat-science">
+            <div class="cat-icon">🔬</div>
+            <h3>Khoa học</h3>
+            <span>820 books</span>
+          </a>
+
+          <a href="/catalog?category=History" class="cat-card cat-history">
+            <div class="cat-icon">🏛️</div>
+            <h3>Lịch sử</h3>
+            <span>640 books</span>
+          </a>
+
+          <a href="/catalog?category=Self-Help" class="cat-card cat-selfhelp">
+            <div class="cat-icon">🌱</div>
+            <h3>Self-Help</h3>
+            <span>510 books</span>
+          </a>
+
+          <a href="/catalog?category=Children" class="cat-card cat-children">
+            <div class="cat-icon">🌈</div>
+            <h3>Trẻ em</h3>
+            <span>380 books</span>
+          </a>
+
+          <a href="/catalog?category=Biography" class="cat-card cat-bio">
+            <div class="cat-icon">👤</div>
+            <h3>Tiểu sử</h3>
+            <span>290 books</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED / NEW ARRIVALS -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Mới ra mắt</h2>
+          <a href="pages/catalog.html?sort=newest" class="view-all">Xem tất cả →</a>
+        </div>
+        <div class="product-grid" id="new-arrivals-grid"></div>
+      </div>
+    </section>
+
+    <!-- BESTSELLERS -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Bestsellers</h2>
+          <a href="pages/catalog.html?sort=popular" class="view-all">Xem tất cả →</a>
+        </div>
+        <div class="product-grid" id="bestsellers-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="logo logo-light">
+          <span class="logo-icon">📖</span>
+          <span class="logo-text">PageTurn</span>
+        </a>
+        <p>Nhận đặt hàng trực tuyến và giao tận nơi</p>
+      </div>
+      <div class="footer-col">
+        <h4>Shop</h4>
+        <a href="/catalog">Tất cả sách</a>
+        <a href="/catalog?sale=true">Khuyến mãi</a>
+        <a href="/catalog?sort=newest">Mới ra mắt</a>
+        <a href="/catalog?sort=popular">Bestsellers</a>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <a href="#" onclick="openAuth('login')">Đăng nhập</a>
+        <a href="#" onclick="openAuth('register')">Đăng ký</a>
+      </div>
+      <div class="footer-col">
+        <h4>Help</h4>
+        <a href="#">FAQ</a>
+        <a href="#">Chính sách vận chuyển</a>
+        <a href="#">Chính sách hoàn trả</a>
+        <a href="#">Liên hệ chúng tôi</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        <span>© 2025 PageTurn Bookstore. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <th:block th:replace="~{fragments/layout :: scripts}" />
+  <script th:src="@{/js/home.js}"></script>
+
+  <style>
+    /* ── Flash Sale Section ── */
+    .fs-section {
+      background: #ee4d2d;
+      padding: 20px 0 28px;
+    }
+
+    /* Header bar đen */
+    .fs-header {
+      background: #1a1a1a;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 22px;
+      margin-bottom: 0;
+    }
+
+    /* Logo FLASH SALE */
+    .fs-logo {
+      font-size: 22px;
+      font-weight: 900;
+      font-style: italic;
+      color: #fff;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-right: 24px;
+      font-family: var(--font-sans);
+    }
+
+    .fs-bolt {
+      color: #ffd600;
+      font-style: normal;
+    }
+
+    /* Ending + timer */
+    .fs-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .fs-ending {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .fs-ending-label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+    }
+
+    .fs-timer {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .fs-block {
+      background: #fff;
+      border-radius: 5px;
+      min-width: 34px;
+      text-align: center;
+      padding: 3px 7px;
+    }
+
+    .fs-block span {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a1a1a;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .fs-colon {
+      color: #ffd600;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    /* Xem tất cả */
+    .fs-viewall {
+      color: #5bb5ff;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+
+    .fs-viewall:hover {
+      opacity: 0.75;
+    }
+
+    .fs-viewall span {
+      font-size: 16px;
+    }
+
+    /* Books strip */
+    .fs-books-wrap {
+      background: #fff;
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+      padding: 18px 16px 18px;
+    }
+
+    .fs-books {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding-bottom: 4px;
+    }
+
+    .fs-books::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Mỗi card sách trong flash sale */
+    .fs-card {
+      flex: 0 0 160px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+      transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+      position: relative;
+    }
+
+    .fs-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .fs-card-img {
+      height: 180px;
+      background: var(--bg-alt);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 72px;
+      position: relative;
+    }
+
+    .fs-discount-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: #ee4d2d;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 4px;
+    }
+
+    .fs-card-body {
+      padding: 10px 10px 12px;
+    }
+
+    .fs-card-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.35;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .fs-card-price {
+      color: #ee4d2d;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .fs-card-orig {
+      color: var(--text-light);
+      font-size: 11px;
+      text-decoration: line-through;
+      margin-left: 4px;
+    }
+
+    /* Progress bar sold */
+    .fs-progress-wrap {
+      margin-top: 8px;
+      background: #f0f0f0;
+      border-radius: 20px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .fs-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ee4d2d, #ffb800);
+      border-radius: 20px;
+      transition: width 0.4s;
+    }
+
+    .fs-sold-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-align: center;
+    }
+  </style>
+
+  <script th:src="@{/js/home.js}"></script>
+  <script th:src="@{/js/data.js}"></script>
+  <script src="/js/cart.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/home.js"></script>
+  <script>
+    /* ── Flash Sale countdown ── */
+    (function () {
+      function getTarget() {
+        const t = new Date();
+        t.setHours(23, 59, 59, 0);
+        if (new Date() >= t) t.setDate(t.getDate() + 1);
+        return t;
+      }
+      let target = getTarget();
+      function pad(n) { return String(n).padStart(2, "0"); }
+      function tick() {
+        let diff = Math.max(0, target - new Date());
+        if (diff === 0) { target = getTarget(); diff = target - new Date(); }
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        const eh = document.getElementById("fs-h");
+        const em = document.getElementById("fs-m");
+        const es = document.getElementById("fs-s");
+        if (eh) eh.textContent = pad(h);
+        if (em) em.textContent = pad(m);
+        if (es) es.textContent = pad(s);
+      }
+      tick();
+      setInterval(tick, 1000);
+    })();
+
+    /* ── Render Flash Sale books ── */
+    document.addEventListener("booksLoaded", function () {
+      const wrap = document.getElementById("fs-books");
+      if (!wrap) return;
+      const saleBooks = BOOKS.filter((b) => b.originalPrice).slice(0, 10);
+      const list = saleBooks.length ? saleBooks : BOOKS.slice(0, 10);
+      wrap.innerHTML = list.map((b) => {
+        const discount = b.originalPrice ? Math.round((1 - b.price / b.originalPrice) * 100) : 20;
+        const origPrice = b.originalPrice || Math.round(b.price * 1.25);
+        const sold = Math.floor(Math.random() * 60) + 20;
+        return `
+            <div class="fs-card" onclick="location.href='/product?id=${b.id}'">
+              <div class="fs-card-img">
+                ${b.emoji}
+                <div class="fs-discount-badge">-${discount}%</div>
+              </div>
+              <div class="fs-card-body">
+                <div class="fs-card-title">${b.title}</div>
+                <div>
+                  <span class="fs-card-price">${b.price.toLocaleString("vi-VN")}₫</span>
+                  <span class="fs-card-orig">${origPrice.toLocaleString("vi-VN")}₫</span>
+                </div>
+                <div class="fs-progress-wrap">
+                  <div class="fs-progress-bar" style="width:${sold}%"></div>
+                </div>
+                <div class="fs-sold-label">Đã bán ${sold}%</div>
+              </div>
+            </div>`;
+      }).join("");
+    });
+  </script>
+</body>
+
+</html>

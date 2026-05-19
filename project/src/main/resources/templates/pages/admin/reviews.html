@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <th:block th:replace="~{fragments/admin-layout :: head('Orders — Admin | PageTurn')}" />
+</head>
+
+<body>
+  <th:block th:replace="~{fragments/admin-layout :: sidebar('reviews')}" />
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1>Review Management</h1>
+      <div style="font-size:14px;color:var(--text-muted)">Moderate customer reviews</div>
+    </div>
+    <div class="admin-content">
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <select id="review-filter" onchange="renderReviews()"
+          style="padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;outline:none">
+          <option value="">All Reviews</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="flagged">Flagged</option>
+        </select>
+        <select id="rating-filter" onchange="renderReviews()"
+          style="padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;outline:none">
+          <option value="">All Ratings</option>
+          <option value="5">5 Stars</option>
+          <option value="4">4 Stars</option>
+          <option value="3">3 Stars</option>
+          <option value="2">2 Stars</option>
+          <option value="1">1 Star</option>
+        </select>
+      </div>
+      <div id="reviews-list" style="display:flex;flex-direction:column;gap:16px"></div>
+    </div>
+  </main>
+  </div>
+  </div>
+
+  <th:block th:replace="~{fragments/admin-layout :: scripts}" />
+
+  <script>
+
+    let reviews = JSON.parse(localStorage.getItem("pt_reviews") || JSON.stringify([
+      { id: 1, book: "The Midnight Library", author: "Minh Nguyen", rating: 5, text: "Absolutely amazing book! The story captivated me from the very first page. The writing is beautiful and touching.", date: "01/05/2025", status: "approved", verified: true },
+      { id: 2, book: "Atomic Habits", author: "Thu Lan", rating: 5, text: "This book changed my life! The strategies are practical and easy to apply. Highly recommended for everyone.", date: "02/05/2025", status: "approved", verified: true },
+      { id: 3, book: "Sapiens", author: "Hung Tran", rating: 4, text: "Very insightful historical perspective. Some parts were a bit slow but overall a great read.", date: "03/05/2025", status: "approved", verified: false },
+      { id: 4, book: "Project Hail Mary", author: "Lan Mai", rating: 5, text: "Best sci-fi book I've read in years! The science is fascinating and the story is gripping from start to finish.", date: "04/05/2025", status: "pending", verified: true },
+      { id: 5, book: "The Alchemist", author: "Anh Pham", rating: 2, text: "Overrated honestly. Not sure what all the hype is about. Very basic plot.", date: "04/05/2025", status: "flagged", verified: false },
+      { id: 6, book: "Dune", author: "Nam Vo", rating: 5, text: "A masterpiece! Rich world-building, complex characters, and an epic story. Can't wait to read the sequel.", date: "05/05/2025", status: "pending", verified: true },
+    ]));
+
+    function renderReviews() {
+      const statusF = document.getElementById("review-filter").value;
+      const ratingF = document.getElementById("rating-filter").value;
+      let filtered = reviews;
+      if (statusF) filtered = filtered.filter(r => r.status === statusF);
+      if (ratingF) filtered = filtered.filter(r => r.rating === parseInt(ratingF));
+
+      const statusColors = { approved: "badge-success", pending: "badge-warning", flagged: "badge-danger" };
+      document.getElementById("reviews-list").innerHTML = filtered.map(r => `
+    <div class="admin-table-wrap" style="padding:24px;border-left:4px solid ${r.status === "flagged" ? "var(--danger)" : r.status === "pending" ? "#FAC775" : "var(--border)"}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-weight:600;font-size:15px">${r.book}</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">by ${r.author} · ${r.date} ${r.verified ? '<span style="color:var(--success);font-size:11px">✓ Verified Purchase</span>' : ""}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:#E8A830;font-size:16px">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span>
+          <span class="badge ${statusColors[r.status]}">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span>
+        </div>
+      </div>
+      <p style="font-size:14px;color:var(--text-muted);font-style:italic;margin-bottom:16px;">"${r.text}"</p>
+      <div style="display:flex;gap:8px">
+        ${r.status !== "approved" ? `<button class="btn-primary btn-sm" onclick="moderateReview(${r.id},'approved')">✓ Approve</button>` : ""}
+        ${r.status !== "flagged" ? `<button class="btn-ghost btn-sm" onclick="moderateReview(${r.id},'flagged')" style="color:var(--danger)">⚠ Flag</button>` : ""}
+        <button class="btn-ghost btn-sm" onclick="deleteReview(${r.id})" style="color:var(--danger)">🗑 Delete</button>
+      </div>
+    </div>
+  `).join("") || `<div style="text-align:center;padding:60px;color:var(--text-muted)"><p style="font-size:48px">⭐</p><p>No reviews found</p></div>`;
+    }
+
+    function moderateReview(id, newStatus) {
+      const r = reviews.find(x => x.id === id);
+      if (r) { r.status = newStatus; localStorage.setItem("pt_reviews", JSON.stringify(reviews)); showToast(`Review ${newStatus}`, newStatus === "approved" ? "success" : "info"); renderReviews(); }
+    }
+    function deleteReview(id) {
+      if (!confirm("Delete this review? This cannot be undone.")) return;
+      reviews = reviews.filter(x => x.id !== id);
+      localStorage.setItem("pt_reviews", JSON.stringify(reviews));
+      showToast("Review deleted", "info"); renderReviews();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => { if (checkAdminAccess()) renderReviews(); });
+  </script>
+</body>
+
+</html>

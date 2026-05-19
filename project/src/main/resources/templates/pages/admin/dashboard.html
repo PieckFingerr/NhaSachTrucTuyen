@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <th:block th:replace="~{fragments/admin-layout :: head('Orders — Admin | PageTurn')}" />
+</head>
+
+<body>
+  <th:block th:replace="~{fragments/admin-layout :: sidebar('dashboard')}" />
+
+  <!-- MAIN -->
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1>Dashboard</h1>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:14px;color:var(--text-muted)">Welcome, <strong id="admin-name">Admin</strong></span>
+        <div
+          style="width:36px;height:36px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--accent)">
+          A</div>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <!-- Low stock alert -->
+      <div class="low-stock-alert" id="low-stock-alert">
+        ⚠️ <strong>Low Stock Alert:</strong> <span id="low-stock-list"></span>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="label">Total Revenue (May)</div>
+          <div class="value" id="stat-revenue">₫0</div>
+          <div class="change">↑ 12.4% vs last month</div>
+        </div>
+        <div class="stat-card" style="border-top-color:#2E5C8A">
+          <div class="label">Total Orders</div>
+          <div class="value" id="stat-orders">0</div>
+          <div class="change">↑ 8 new today</div>
+        </div>
+        <div class="stat-card" style="border-top-color:#5C7A3E">
+          <div class="label">Customers</div>
+          <div class="value" id="stat-customers">0</div>
+          <div class="change">↑ 3 new this week</div>
+        </div>
+        <div class="stat-card" style="border-top-color:#7A3E5C">
+          <div class="label">Products</div>
+          <div class="value" id="stat-products">0</div>
+          <div class="change down">⚠ 3 low in stock</div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:28px">
+        <div class="admin-table-wrap">
+          <div class="admin-table-head">
+            <h3>Revenue — Last 7 Days</h3>
+          </div>
+          <div style="padding:20px"><canvas id="revenue-chart" height="200"></canvas></div>
+        </div>
+        <div class="admin-table-wrap">
+          <div class="admin-table-head">
+            <h3>Orders by Status</h3>
+          </div>
+          <div style="padding:20px;display:flex;align-items:center;justify-content:center"><canvas id="status-chart"
+              height="200"></canvas></div>
+        </div>
+      </div>
+
+      <!-- RECENT ORDERS TABLE -->
+      <div class="admin-table-wrap" style="margin-bottom:28px">
+        <div class="admin-table-head">
+          <h3>Recent Orders</h3>
+          <a href="/admin/orders" class="btn-primary btn-sm">View All</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="recent-orders-table"></tbody>
+        </table>
+      </div>
+
+      <!-- LOW STOCK PRODUCTS -->
+      <div class="admin-table-wrap">
+        <div class="admin-table-head">
+          <h3>⚠️ Low Stock Products</h3>
+          <a href="/admin/products" class="btn-primary btn-sm">Manage Inventory</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Author</th>
+              <th>Category</th>
+              <th>Stock</th>
+              <th>Price</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="low-stock-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  </div>
+  </div>
+
+  <th:block th:replace="~{fragments/admin-layout :: scripts}" />
+
+  <script>
+
+    // ===== DASHBOARD DATA =====
+    function loadDashboard() {
+      const orders = JSON.parse(localStorage.getItem("pt_orders") || "[]");
+      const users = JSON.parse(localStorage.getItem("pt_users") || "[]");
+
+      // Stats
+      const revenue = orders.reduce((s, o) => s + (o.total || 0), 0);
+      document.getElementById("stat-revenue").textContent = formatPrice(revenue || 14820000);
+      document.getElementById("stat-orders").textContent = orders.length || 3;
+      document.getElementById("stat-customers").textContent = users.length + 2;
+      document.getElementById("stat-products").textContent = BOOKS.length;
+
+      // Low stock
+      const lowStock = BOOKS.filter(b => b.stock < 5 && b.stock > 0);
+      const outOfStock = BOOKS.filter(b => b.stock === 0);
+      const alertEl = document.getElementById("low-stock-list");
+      if (lowStock.length > 0 || outOfStock.length > 0) {
+        alertEl.textContent = [...lowStock.map(b => `${b.title} (${b.stock} left)`), ...outOfStock.map(b => `${b.title} (OUT)`)].join(", ");
+      } else {
+        document.getElementById("low-stock-alert").style.display = "none";
+      }
+
+      // Low stock table
+      const lstBody = document.getElementById("low-stock-table");
+      const lowBooks = BOOKS.filter(b => b.stock < 5);
+      lstBody.innerHTML = lowBooks.map(b => `
+    <tr>
+      <td><strong>${b.emoji} ${b.title}</strong></td>
+      <td>${b.author}</td>
+      <td>${b.category}</td>
+      <td><span class="badge badge-${b.stock === 0 ? "danger" : "warning"}">${b.stock === 0 ? "Out of Stock" : `${b.stock} left`}</span></td>
+      <td>${formatPrice(b.price)}</td>
+      <td><button class="btn-primary btn-sm" onclick="showToast('Restock feature: connect to Spring Boot API', 'info')">Restock</button></td>
+    </tr>
+  `).join("");
+
+      // Recent orders table
+      const ordersBody = document.getElementById("recent-orders-table");
+      const displayOrders = orders.length > 0 ? orders.slice(0, 5) : [
+        { id: "ORD-1748001", shippingInfo: { name: "Minh Nguyen" }, date: "01/05/2025", items: [{ qty: 2 }], total: 478000, paymentMethod: "cod", status: "Delivered" },
+        { id: "ORD-1748002", shippingInfo: { name: "Thu Lan" }, date: "02/05/2025", items: [{ qty: 1 }], total: 259000, paymentMethod: "card", status: "Shipping" },
+        { id: "ORD-1748003", shippingInfo: { name: "Hung Tran" }, date: "03/05/2025", items: [{ qty: 3 }], total: 647000, paymentMethod: "ewallet", status: "Confirmed" },
+        { id: "ORD-1748004", shippingInfo: { name: "Lan Mai" }, date: "04/05/2025", items: [{ qty: 1 }], total: 219000, paymentMethod: "cod", status: "Pending" },
+        { id: "ORD-1748005", shippingInfo: { name: "Anh Pham" }, date: "05/05/2025", items: [{ qty: 2 }], total: 398000, paymentMethod: "card", status: "Pending" },
+      ];
+
+      ordersBody.innerHTML = displayOrders.map(o => {
+        const statusMap = { Pending: "badge-warning", Confirmed: "badge-info", Shipping: "badge-info", Delivered: "badge-success", Cancelled: "badge-danger" };
+        const itemCount = o.items.reduce((s, i) => s + (i.qty || 1), 0);
+        return `<tr>
+      <td style="font-family:monospace;font-size:13px">${o.id}</td>
+      <td>${o.shippingInfo?.name || "—"}</td>
+      <td>${o.date}</td>
+      <td>${itemCount} item${itemCount !== 1 ? "s" : ""}</td>
+      <td><strong>${formatPrice(o.total || 0)}</strong></td>
+      <td style="text-transform:uppercase;font-size:12px">${o.paymentMethod || "COD"}</td>
+      <td><span class="badge ${statusMap[o.status] || "badge-warning"}">${o.status}</span></td>
+      <td>
+        <select style="border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:12px" onchange="updateOrderStatus('${o.id}', this.value)">
+          <option ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
+          <option ${o.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+          <option ${o.status === 'Shipping' ? 'selected' : ''}>Shipping</option>
+          <option ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+          <option ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+        </select>
+      </td>
+    </tr>`;
+      }).join("");
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+      const orders = JSON.parse(localStorage.getItem("pt_orders") || "[]");
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        order.status = newStatus;
+        localStorage.setItem("pt_orders", JSON.stringify(orders));
+        showToast(`Order ${orderId} updated to ${newStatus}`, "success");
+      }
+    }
+
+    // ===== CHARTS =====
+    function initCharts() {
+      // Revenue chart
+      const rCtx = document.getElementById("revenue-chart").getContext("2d");
+      new Chart(rCtx, {
+        type: "bar",
+        data: {
+          labels: ["Apr 30", "May 1", "May 2", "May 3", "May 4", "May 5", "May 6"],
+          datasets: [{
+            label: "Revenue (₫)",
+            data: [1250000, 2100000, 1800000, 3200000, 2750000, 1950000, 2480000],
+            backgroundColor: "rgba(196,89,26,0.75)",
+            borderColor: "#C4591A",
+            borderWidth: 2,
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { callback: v => "₫" + (v / 1000000).toFixed(1) + "M", font: { size: 11 } }, grid: { color: "rgba(0,0,0,0.05)" } },
+            x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+          }
+        }
+      });
+
+      // Status donut chart
+      const sCtx = document.getElementById("status-chart").getContext("2d");
+      new Chart(sCtx, {
+        type: "doughnut",
+        data: {
+          labels: ["Pending", "Confirmed", "Shipping", "Delivered", "Cancelled"],
+          datasets: [{
+            data: [4, 6, 3, 18, 1],
+            backgroundColor: ["#FAC775", "#85B7EB", "#9FE1CB", "#5DCAA5", "#F09595"],
+            borderWidth: 2,
+            borderColor: "#fff"
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: "bottom", labels: { font: { size: 11 } } } },
+          cutout: "60%"
+        }
+      });
+    }
+
+    // ===== INIT =====
+    document.addEventListener("booksLoaded", () => {
+      if (checkAdminAccess()) {
+        loadDashboard();
+        initCharts();
+      }
+    });
+  </script>
+</body>
+
+</html>

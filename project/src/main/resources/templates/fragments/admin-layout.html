@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${title}">Admin — PageTurn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link rel="stylesheet" th:href="@{/css/components.css}"/>
+</head>
+<body>
+
+<th:block th:fragment="sidebar(activePage)">
+  <div id="toast-container"></div>
+  <div id="access-denied" class="hidden" style="position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px">
+    <div style="font-size:64px">🔒</div><h2>Access Denied</h2>
+    <a href="/" class="btn-primary">Back to Home</a>
+  </div>
+
+  <div id="admin-app" class="hidden">
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="admin-logo">
+          <a th:href="@{/}" class="logo">
+            <span class="logo-icon">📖</span>
+            <span class="logo-text">PageTurn</span>
+          </a>
+        </div>
+        <nav class="admin-nav">
+          <a th:href="@{/admin/dashboard}"  th:classappend="${activePage == 'dashboard'}  ? 'active'">📊 Dashboard</a>
+          <a th:href="@{/admin/products}"   th:classappend="${activePage == 'products'}   ? 'active'">📚 Products</a>
+          <a th:href="@{/admin/orders}"     th:classappend="${activePage == 'orders'}     ? 'active'">📋 Orders</a>
+          <a th:href="@{/admin/customers}"  th:classappend="${activePage == 'customers'}  ? 'active'">👥 Customers</a>
+          <a th:href="@{/admin/categories}" th:classappend="${activePage == 'categories'} ? 'active'">📁 Categories</a>
+          <a th:href="@{/admin/reviews}"    th:classappend="${activePage == 'reviews'}    ? 'active'">⭐ Reviews</a>
+          <a th:href="@{/admin/coupons}"    th:classappend="${activePage == 'coupons'}    ? 'active'">🏷️ Coupons</a>
+          <div style="border-top:1px solid rgba(255,255,255,0.08);margin:16px 0"></div>
+          <a th:href="@{/}">🏠 View Store</a>
+          <a href="#" onclick="adminLogout()">🚪 Sign Out</a>
+        </nav>
+      </aside>
+      <!-- main content được inject từ mỗi page vào đây -->
+</th:block>
+
+<!-- ── Shared scripts ── -->
+<th:block th:fragment="scripts">
+  <script th:src="@{/js/data.js}"></script>
+  <script th:src="@{/js/cart.js}"></script>
+  <script th:src="@{/js/auth.js}"></script>
+  <script th:src="@{/js/ui.js}"></script>
+  <script>
+    function checkAdminAccess() {
+      const user = JSON.parse(localStorage.getItem("pt_user") || "null");
+      if (!user || user.role !== "admin") {
+        document.getElementById("access-denied").classList.remove("hidden");
+        return false;
+      }
+      document.getElementById("admin-app").classList.remove("hidden");
+      return true;
+    }
+    function adminLogout() {
+      localStorage.removeItem("pt_user");
+      window.location.href = "/";
+    }
+  </script>
+</th:block>
+
+</body>
+</html>

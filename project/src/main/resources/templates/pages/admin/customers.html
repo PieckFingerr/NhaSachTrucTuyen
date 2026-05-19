@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <th:block th:replace="~{fragments/admin-layout :: head('Orders — Admin | PageTurn')}" />
+</head>
+
+<body>
+  <th:block th:replace="~{fragments/admin-layout :: sidebar('customers')}" />
+
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1>Customer Management</h1>
+      <div style="font-size:14px;color:var(--text-muted)">Manage user accounts</div>
+    </div>
+    <div class="admin-content">
+      <div style="display:flex;gap:12px;margin-bottom:20px">
+        <input type="text" id="cust-search" placeholder="Search by name or email…"
+          style="padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;outline:none;width:280px"
+          oninput="renderCustomers()">
+        <select id="cust-status-filter" onchange="renderCustomers()"
+          style="padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;outline:none">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="locked">Locked</option>
+        </select>
+      </div>
+      <div class="admin-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Joined</th>
+              <th>Orders</th>
+              <th>Total Spent</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="customers-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  </div>
+  </div>
+
+  <th:block th:replace="~{fragments/admin-layout :: scripts}" />
+
+
+  <script src="/js/data.js"></script>
+  <script src="/js/cart.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+
+    const DEMO_CUSTOMERS = [
+      { id: 1, name: "Minh Nguyen", email: "minh@mail.com", phone: "0901234567", joined: "15/01/2025", orders: 8, spent: 2400000, locked: false },
+      { id: 2, name: "Thu Lan", email: "lan@mail.com", phone: "0912345678", joined: "22/01/2025", orders: 3, spent: 647000, locked: false },
+      { id: 3, name: "Hung Tran", email: "hung@mail.com", phone: "0923456789", joined: "05/02/2025", orders: 5, spent: 1200000, locked: false },
+      { id: 4, name: "Lan Mai", email: "lanmai@mail.com", phone: "0934567890", joined: "18/02/2025", orders: 2, spent: 468000, locked: false },
+      { id: 5, name: "Anh Pham", email: "anh@mail.com", phone: "0945678901", joined: "01/03/2025", orders: 1, spent: 259000, locked: true },
+      { id: 6, name: "Nam Vo", email: "nam@mail.com", phone: "0956789012", joined: "10/03/2025", orders: 4, spent: 980000, locked: false },
+      { id: 7, name: "Test User", email: "user@pageturn.vn", phone: "0987654321", joined: "01/05/2025", orders: 0, spent: 0, locked: false },
+    ];
+
+    let customerData = JSON.parse(localStorage.getItem("pt_customer_data") || JSON.stringify(DEMO_CUSTOMERS));
+
+    function renderCustomers() {
+      const search = document.getElementById("cust-search").value.toLowerCase();
+      const statusF = document.getElementById("cust-status-filter").value;
+      let custs = customerData;
+      if (search) custs = custs.filter(c => c.name.toLowerCase().includes(search) || c.email.toLowerCase().includes(search));
+      if (statusF === "locked") custs = custs.filter(c => c.locked);
+      if (statusF === "active") custs = custs.filter(c => !c.locked);
+
+      document.getElementById("customers-table").innerHTML = custs.map(c => `<tr>
+    <td><div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">${c.name.split(" ").map(w => w[0]).join("").slice(0, 2)}</div><div><div style="font-weight:500">${c.name}</div></div></div></td>
+    <td style="font-size:13px">${c.email}</td>
+    <td style="font-size:13px">${c.phone}</td>
+    <td style="font-size:13px">${c.joined}</td>
+    <td style="text-align:center">${c.orders}</td>
+    <td>${formatPrice(c.spent)}</td>
+    <td><span class="badge ${c.locked ? "badge-danger" : "badge-success"}">${c.locked ? "Locked" : "Active"}</span></td>
+    <td><button class="btn-${c.locked ? "primary" : "ghost"} btn-sm" onclick="toggleLock(${c.id})" style="${c.locked ? "" : "color:var(--danger)"}">${c.locked ? "Unlock" : "Lock"}</button></td>
+  </tr>`).join("") || `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">No customers found</td></tr>`;
+    }
+
+    function toggleLock(id) {
+      const c = customerData.find(x => x.id === id);
+      if (!c) return;
+      c.locked = !c.locked;
+      localStorage.setItem("pt_customer_data", JSON.stringify(customerData));
+      showToast(`${c.name} account ${c.locked ? "locked" : "unlocked"}`, c.locked ? "error" : "success");
+      renderCustomers();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => { if (checkAdminAccess()) renderCustomers(); });
+  </script>
+</body>
+
+</html>
