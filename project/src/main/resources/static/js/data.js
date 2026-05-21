@@ -96,7 +96,7 @@ function filterBooks({ category, minPrice, maxPrice, search, sort, sale } = {}) 
 loadBooks();
 
 let COUPONS = JSON.parse(localStorage.getItem("pt_coupons") || JSON.stringify([
-    { code: "BOOK40",    type: "percent", value: 40, minOrder: 0,      description: "Giảm 40% tất cả sách" },
-    { code: "SUMMER20",  type: "percent", value: 20, minOrder: 300000, description: "Giảm 20% đơn trên ₫300k" },
-    { code: "WELCOME50", type: "fixed",   value: 50000, minOrder: 200000, description: "Giảm ₫50k đơn trên ₫200k" },
+    { code: "BOOK40",    type: "percent", value: 40, minOrder: 0,      description: "Giảm 40% tất cả sách",        active: true },
+    { code: "SUMMER20",  type: "percent", value: 20, minOrder: 300000, description: "Giảm 20% đơn trên ₫300k",     active: true },
+    { code: "WELCOME50", type: "fixed",   value: 50000, minOrder: 200000, description: "Giảm ₫50k đơn trên ₫200k", active: true },
 ]));

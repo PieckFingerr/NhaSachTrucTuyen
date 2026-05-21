@@ -163,7 +163,8 @@
         <div class="summary-totals">
           <div class="summary-row"><span>Subtotal</span><span id="sum-subtotal">₫0</span></div>
           <div class="summary-row" id="sum-discount-row" style="display:none;color:var(--success)">
-            <span>Discount</span><span id="sum-discount">-₫0</span></div>
+            <span>Discount</span><span id="sum-discount">-₫0</span>
+          </div>
           <div class="summary-row"><span>Shipping</span><span id="sum-shipping">Free</span></div>
           <div class="summary-row total"><span>Total</span><span id="sum-total">₫0</span></div>
         </div>
@@ -231,7 +232,6 @@
       if (cart.length === 0) { showToast("Your cart is empty!", "error"); return; }
       if (!validateForm()) { showToast("Please fill in all required fields", "error"); return; }
 
-      // Save order to localStorage (mock — in production: POST /api/orders)
       const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || "cod";
       const order = {
         id: "ORD-" + Date.now(),
@@ -256,22 +256,9 @@
       orders.unshift(order);
       localStorage.setItem("pt_orders", JSON.stringify(orders));
 
-      // Trừ stock trong localStorage (mock — thực tế gọi API)
-      cart.forEach(item => {
-          const bookIdx = BOOKS.findIndex(b => b.id === item.id);
-          if (bookIdx !== -1) {
-              BOOKS[bookIdx].stock = Math.max(0, BOOKS[bookIdx].stock - item.qty);
-          }
-          // Cũng cập nhật trong pt_products nếu có
-          const products = JSON.parse(localStorage.getItem("pt_products") || "[]");
-          const pIdx = products.findIndex(p => p.id === item.id);
-          if (pIdx !== -1) {
-              products[pIdx].stock = Math.max(0, products[pIdx].stock - item.qty);
-              localStorage.setItem("pt_products", JSON.stringify(products));
-          }
-      });
+      // ★ Dùng clearCartAfterOrder — KHÔNG restore stock (đã trừ khi addToCart)
+      clearCartAfterOrder();
 
-      clearCart();
       showToast("Order placed successfully! 🎉", "success");
       setTimeout(() => window.location.href = "/", 1500);
     }
