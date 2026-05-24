@@ -17,29 +17,34 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/api/**").permitAll()
-                .requestMatchers("/admin/**").authenticated()
-                .anyRequest().permitAll()
-            )
-            .formLogin(form -> form
-                .loginPage("/auth")
-                .loginProcessingUrl("/login")   // Spring nhận POST ở đây
-                .defaultSuccessUrl("/admin/dashboard")
-                .failureUrl("/auth?error=true")
-                .permitAll()
-            )
-            .csrf(csrf -> csrf.disable());
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/api/books/**").permitAll() // API sách public
+                        .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/admin/**").authenticated()
+                        .anyRequest().permitAll())
+                .formLogin(form -> form
+                        .loginPage("/auth")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/admin/dashboard", true)
+                        .failureUrl("/auth?error=true")
+                        .permitAll())
+                .csrf(csrf -> csrf.disable())
+                .logout(logout -> logout
+                    .logoutUrl("/logout")
+                    .logoutSuccessUrl("/")
+                    .permitAll()
+                );
         return http.build();
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
         UserDetails admin = User.withDefaultPasswordEncoder()
-            .username("admin@pageturn.vn")
-            .password("admin123")
-            .roles("ADMIN")
-            .build();
+                .username("admin@pageturn.vn")
+                .password("admin123")
+                .roles("ADMIN")
+                .build();
         return new InMemoryUserDetailsManager(admin);
     }
 }

@@ -16,7 +16,7 @@
       margin: 0;
       padding: 0;
     }
-
+d
     :root {
       --ink: #1A1A1A;
       --accent: #C8A96E;
@@ -373,8 +373,6 @@
         <a href="#" class="link-small" onclick="showToast('Chức năng demo', 'info'); return false;">Quên mật khẩu?</a>
       </div>
 
-      <button class="btn-primary" onclick="handleLogin()">Đăng nhập</button>
-
       <div class="divider">hoặc</div>
 
       <button class="btn-google" onclick="showToast('Google login sắp ra mắt!', 'info')">
@@ -462,26 +460,19 @@
 
     // ── Login ──
     function handleLogin() {
-      const email = document.getElementById("login-email").value.trim();
-      const pass = document.getElementById("login-pass").value;
-      let ok = true;
+        const email = document.getElementById("login-email").value.trim();
+        const pass = document.getElementById("login-pass").value;
+        let ok = true;
 
-      if (!email) { showErr("login-email", "Vui lòng nhập email"); ok = false; }
-      else if (!isEmail(email)) { showErr("login-email", "Email không hợp lệ"); ok = false; }
-      if (!pass) { showErr("login-pass", "Vui lòng nhập mật khẩu"); ok = false; }
-      else if (pass.length < 6) { showErr("login-pass", "Mật khẩu quá ngắn"); ok = false; }
-      if (!ok) return;
+        if (!email) { showErr("login-email", "Vui lòng nhập email"); ok = false; }
+        else if (!isEmail(email)) { showErr("login-email", "Email không hợp lệ"); ok = false; }
+        if (!pass) { showErr("login-pass", "Vui lòng nhập mật khẩu"); ok = false; }
+        if (!ok) return;
 
-      const user = users.find(u => u.email === email && u.password === pass);
-      if (!user) { showErr("login-pass", "Email hoặc mật khẩu không đúng"); return; }
-
-      const session = { id: user.id, name: user.name, email: user.email, role: user.role };
-      localStorage.setItem("pt_user", JSON.stringify(session));
-      if (document.getElementById("remember").checked)
-        localStorage.setItem("pt_remember", "true");
-
-      showToast(`Chào mừng trở lại, ${user.name}! 👋`, "success");
-      setTimeout(() => window.location.href = "../index.html", 1200);
+        // Submit thẳng tới Spring Security — bỏ mock auth
+        document.getElementById("hidden-username").value = email;
+        document.getElementById("hidden-password").value = pass;
+        document.getElementById("spring-login-form").submit();
     }
 
     // ── Register ──
@@ -519,6 +510,11 @@
       t._timer = setTimeout(() => t.className = "", 2800);
     }
   </script>
+  <!-- Thêm trước </body> -->
+  <form method="POST" action="/login" id="spring-login-form" style="display:none">
+      <input type="hidden" name="username" id="hidden-username">
+      <input type="hidden" name="password" id="hidden-password">
+  </form>
 </body>
 
 </html>

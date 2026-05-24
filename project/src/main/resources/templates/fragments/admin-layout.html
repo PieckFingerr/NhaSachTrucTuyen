@@ -49,19 +49,15 @@
   <script th:src="@{/js/auth.js}"></script>
   <script th:src="@{/js/ui.js}"></script>
   <script>
-    function checkAdminAccess() {
-      const user = JSON.parse(localStorage.getItem("pt_user") || "null");
-      if (!user || user.role !== "admin") {
-        document.getElementById("access-denied").classList.remove("hidden");
-        return false;
+      function checkAdminAccess() {
+          // Spring Security đã xác thực rồi nên luôn return true ở đây
+          document.getElementById("admin-app").classList.remove("hidden");
+          return true;
       }
-      document.getElementById("admin-app").classList.remove("hidden");
-      return true;
-    }
-    function adminLogout() {
-      localStorage.removeItem("pt_user");
-      window.location.href = "/";
-    }
+      function adminLogout() {
+          localStorage.removeItem("pt_user");
+          window.location.href = "/logout";  // Spring Security logout
+      }
   </script>
 </th:block>
 

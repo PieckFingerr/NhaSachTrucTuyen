@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <head>
-  <th:block th:replace="~{fragments/admin-layout :: head('Orders — Admin | PageTurn')}" />
+  <th:block th:replace="~{fragments/admin-layout :: head('Products — Admin | PageTurn')}" />
 </head>
 
 <body>
@@ -12,11 +12,18 @@
       <button class="modal-close" onclick="closeProductModal()">×</button>
       <h2 class="auth-title" id="product-modal-title">Add New Product</h2>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div class="form-group" style="grid-column:1/-1"><label>Title *</label><input type="text" id="p-title"
-            oninput="clearErr('p-title')"><span class="field-err" id="p-title-err"></span></div>
-        <div class="form-group"><label>Author *</label><input type="text" id="p-author"
-            oninput="clearErr('p-author')"><span class="field-err" id="p-author-err"></span></div>
-        <div class="form-group"><label>Category *</label>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Title *</label>
+          <input type="text" id="p-title" oninput="clearErr('p-title')">
+          <span class="field-err" id="p-title-err"></span>
+        </div>
+        <div class="form-group">
+          <label>Author *</label>
+          <input type="text" id="p-author" oninput="clearErr('p-author')">
+          <span class="field-err" id="p-author-err"></span>
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
           <select id="p-category">
             <option>Fiction</option>
             <option>Non-Fiction</option>
@@ -28,21 +35,33 @@
             <option>Children</option>
           </select>
         </div>
-        <div class="form-group"><label>Price (₫) *</label><input type="number" id="p-price" min="0"
-            oninput="clearErr('p-price')"><span class="field-err" id="p-price-err"></span></div>
-        <div class="form-group"><label>Original Price (₫)</label><input type="number" id="p-orig-price" min="0"
-            placeholder="Leave empty if no discount"></div>
-        <div class="form-group"><label>Stock Quantity *</label><input type="number" id="p-stock" min="0"
-            oninput="clearErr('p-stock')"><span class="field-err" id="p-stock-err"></span></div>
-        <div class="form-group"><label>Emoji Icon</label><input type="text" id="p-emoji" placeholder="📚" maxlength="2">
+        <div class="form-group">
+          <label>Price (₫) *</label>
+          <input type="number" id="p-price" min="0" oninput="clearErr('p-price')">
+          <span class="field-err" id="p-price-err"></span>
         </div>
-        <div class="form-group" style="grid-column:1/-1"><label>Description</label><textarea id="p-desc" rows="3"
+        <div class="form-group">
+          <label>Stock Quantity *</label>
+          <input type="number" id="p-stock" min="0" oninput="clearErr('p-stock')">
+          <span class="field-err" id="p-stock-err"></span>
+        </div>
+        <div class="form-group">
+          <label>ISBN</label>
+          <input type="text" id="p-isbn" placeholder="978-3-16-148410-0">
+        </div>
+        <div class="form-group">
+          <label>Rating (1-5)</label>
+          <input type="number" id="p-rating" min="1" max="5" step="0.1" placeholder="4.5">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Thumbnail URL</label>
+          <input type="text" id="p-thumbnail" placeholder="https://...">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Description</label>
+          <textarea id="p-desc" rows="3"
             style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;resize:vertical;outline:none;font-family:inherit"></textarea>
         </div>
-        <div class="form-group"><label class="checkbox-label" style="margin-top:8px"><input type="checkbox" id="p-new">
-            Mark as New Arrival</label></div>
-        <div class="form-group"><label class="checkbox-label" style="margin-top:8px"><input type="checkbox"
-              id="p-bestseller"> Mark as Bestseller</label></div>
       </div>
       <div style="display:flex;gap:12px;margin-top:20px">
         <button class="btn-primary btn-full" onclick="saveProduct()">Save Product</button>
@@ -50,7 +69,9 @@
       </div>
     </div>
   </div>
+
   <th:block th:replace="~{fragments/admin-layout :: sidebar('products')}" />
+
   <main class="admin-main">
     <div class="admin-topbar">
       <h1>Product Management</h1>
@@ -72,6 +93,7 @@
           <option>Self-Help</option>
           <option>Biography</option>
           <option>Business</option>
+          <option>Children</option>
         </select>
         <select id="prod-stock-filter" onchange="renderProducts()"
           style="padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:14px;outline:none">
@@ -89,10 +111,8 @@
               <th>Book</th>
               <th>Category</th>
               <th>Price</th>
-              <th>Orig. Price</th>
               <th>Stock</th>
               <th>Rating</th>
-              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -103,164 +123,196 @@
   </main>
   </div>
   </div>
-  <th:block th:replace="~{fragments/admin-layout :: scripts}" />
-  <script>
 
-    // Editable products list (copies from BOOKS)
+  <th:block th:replace="~{fragments/admin-layout :: scripts}" />
+
+  <script>
     let products = [];
-    document.addEventListener("booksLoaded", () => {
-      products = JSON.parse(localStorage.getItem("pt_products") || JSON.stringify(BOOKS));
-      if (checkAdminAccess()) renderProducts();
-    });
     let editingId = null;
 
-
-    function adminLogout() {
-      localStorage.removeItem("pt_user");
-      window.location.href = "/";
+    // ── Load từ API ──────────────────────────────────────────
+    async function loadProducts() {
+      try {
+        const res = await fetch("/api/books");
+        products = await res.json();
+        renderProducts();
+      } catch (e) {
+        showToast("Không thể tải danh sách sách", "error");
+      }
     }
 
+    // ── Render bảng ──────────────────────────────────────────
     function renderProducts() {
       const search = document.getElementById("prod-search").value.toLowerCase();
       const cat = document.getElementById("prod-cat-filter").value;
       const stockFilter = document.getElementById("prod-stock-filter").value;
 
       let filtered = products;
-      if (search) filtered = filtered.filter(p => p.title.toLowerCase().includes(search) || p.author.toLowerCase().includes(search));
+      if (search) filtered = filtered.filter(p =>
+        p.title.toLowerCase().includes(search) || p.author.toLowerCase().includes(search));
       if (cat) filtered = filtered.filter(p => p.category === cat);
       if (stockFilter === "low") filtered = filtered.filter(p => p.stock > 0 && p.stock < 5);
       if (stockFilter === "out") filtered = filtered.filter(p => p.stock === 0);
 
-      document.getElementById("prod-count").textContent = `${filtered.length} products`;
+      document.getElementById("prod-count").textContent = `${filtered.length} sản phẩm`;
 
       const tbody = document.getElementById("products-table");
       tbody.innerHTML = filtered.map(p => {
-        const stockBadge = p.stock === 0 ? `<span class="badge badge-danger">Out of Stock</span>` :
-          p.stock < 5 ? `<span class="badge badge-warning">${p.stock} left</span>` :
-            `<span class="badge badge-success">${p.stock}</span>`;
-        const discount = p.originalPrice ? Math.round((1 - p.price / p.originalPrice) * 100) : 0;
+        const stockBadge = p.stock === 0
+          ? `<span class="badge badge-danger">Hết hàng</span>`
+          : p.stock < 5
+            ? `<span class="badge badge-warning">${p.stock} còn lại</span>`
+            : `<span class="badge badge-success">${p.stock}</span>`;
+
+        const emoji = categoryEmoji(p.category);
+
         return `<tr>
-      <td>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:24px">${p.emoji}</span>
-          <div>
-            <div style="font-weight:600;font-size:14px">${p.title}</div>
-            <div style="font-size:12px;color:var(--text-muted)">${p.author}</div>
-          </div>
-        </div>
-      </td>
-      <td><span class="badge badge-info">${p.category}</span></td>
-      <td><strong>${formatPrice(p.price)}</strong></td>
-      <td>${p.originalPrice ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px">${formatPrice(p.originalPrice)}</span> <span style="color:var(--danger);font-size:12px">-${discount}%</span>` : "—"}</td>
-      <td>${stockBadge}</td>
-      <td>★ ${p.rating} <span style="color:var(--text-muted);font-size:12px">(${p.reviews})</span></td>
-      <td>
-        <div style="display:flex;flex-direction:column;gap:2px">
-          ${p.isNew ? `<span class="badge badge-success">New</span>` : ""}
-          ${p.isBestseller ? `<span class="badge badge-info">Bestseller</span>` : ""}
-          ${!p.isNew && !p.isBestseller ? `<span style="color:var(--text-muted);font-size:12px">Standard</span>` : ""}
-        </div>
-      </td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn-primary btn-sm" onclick="editProduct(${p.id})">Edit</button>
-          <button class="btn-ghost btn-sm" onclick="deleteProduct(${p.id})" style="color:var(--danger)">Delete</button>
-        </div>
-      </td>
-    </tr>`;
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:24px">${emoji}</span>
+              <div>
+                <div style="font-weight:600;font-size:14px">${p.title}</div>
+                <div style="font-size:12px;color:var(--text-muted)">${p.author}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-info">${p.category || "—"}</span></td>
+          <td><strong>${formatPrice(p.price)}</strong></td>
+          <td>${stockBadge}</td>
+          <td>★ ${(p.rating || 0).toFixed(1)}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <button class="btn-primary btn-sm" onclick="editProduct(${p.id})">Sửa</button>
+              <button class="btn-ghost btn-sm" onclick="deleteProduct(${p.id})"
+                style="color:var(--danger)">Xóa</button>
+            </div>
+          </td>
+        </tr>`;
       }).join("");
     }
 
-    function openProductModal(id = null) {
-      editingId = id;
-      const modal = document.getElementById("product-modal");
-      const title = document.getElementById("product-modal-title");
-      if (id) {
-        const p = products.find(x => x.id === id);
-        if (!p) return;
-        title.textContent = "Edit Product";
-        document.getElementById("p-title").value = p.title;
-        document.getElementById("p-author").value = p.author;
-        document.getElementById("p-category").value = p.category;
-        document.getElementById("p-price").value = p.price;
-        document.getElementById("p-orig-price").value = p.originalPrice || "";
-        document.getElementById("p-stock").value = p.stock;
-        document.getElementById("p-emoji").value = p.emoji || "📚";
-        document.getElementById("p-desc").value = p.description || "";
-        document.getElementById("p-new").checked = p.isNew;
-        document.getElementById("p-bestseller").checked = p.isBestseller;
-      } else {
-        title.textContent = "Add New Product";
-        ["p-title", "p-author", "p-price", "p-orig-price", "p-stock", "p-desc"].forEach(id => document.getElementById(id).value = "");
-        document.getElementById("p-emoji").value = "📚";
-        document.getElementById("p-new").checked = false;
-        document.getElementById("p-bestseller").checked = false;
-      }
-      modal.classList.remove("hidden");
+    // ── Mở modal thêm mới ────────────────────────────────────
+    function openProductModal() {
+      editingId = null;
+      document.getElementById("product-modal-title").textContent = "Add New Product";
+      ["p-title", "p-author", "p-price", "p-stock", "p-isbn", "p-rating", "p-thumbnail", "p-desc"]
+        .forEach(id => document.getElementById(id).value = "");
+      document.getElementById("p-category").value = "Fiction";
+      document.getElementById("product-modal").classList.remove("hidden");
     }
 
-    function editProduct(id) { openProductModal(id); }
+    // ── Mở modal sửa ────────────────────────────────────────
+    function editProduct(id) {
+      const p = products.find(x => x.id === id);
+      if (!p) return;
+      editingId = id;
+      document.getElementById("product-modal-title").textContent = "Edit Product";
+      document.getElementById("p-title").value = p.title || "";
+      document.getElementById("p-author").value = p.author || "";
+      document.getElementById("p-category").value = p.category || "Fiction";
+      document.getElementById("p-price").value = p.price || "";
+      document.getElementById("p-stock").value = p.stock || 0;
+      document.getElementById("p-isbn").value = p.isbn || "";
+      document.getElementById("p-rating").value = p.rating || "";
+      document.getElementById("p-thumbnail").value = p.thumbnail || "";
+      document.getElementById("p-desc").value = p.description || "";
+      document.getElementById("product-modal").classList.remove("hidden");
+    }
 
     function closeProductModal() {
       document.getElementById("product-modal").classList.add("hidden");
       editingId = null;
     }
 
-    function saveProduct() {
+    // ── Lưu (POST hoặc PUT) ──────────────────────────────────
+    async function saveProduct() {
       const title = document.getElementById("p-title").value.trim();
       const author = document.getElementById("p-author").value.trim();
-      const price = parseInt(document.getElementById("p-price").value);
+      const price = parseFloat(document.getElementById("p-price").value);
       const stock = parseInt(document.getElementById("p-stock").value);
       let valid = true;
 
       if (!title) { showFieldErr("p-title", "Title is required"); valid = false; }
       if (!author) { showFieldErr("p-author", "Author is required"); valid = false; }
-      if (!price || price < 0) { showFieldErr("p-price", "Valid price required (cannot be negative)"); valid = false; }
-      if (isNaN(stock) || stock < 0) { showFieldErr("p-stock", "Valid stock quantity required"); valid = false; }
+      if (isNaN(price) || price < 0) { showFieldErr("p-price", "Valid price required"); valid = false; }
+      if (isNaN(stock) || stock < 0) { showFieldErr("p-stock", "Valid stock required"); valid = false; }
       if (!valid) return;
 
-      const origPrice = parseInt(document.getElementById("p-orig-price").value) || null;
-      const product = {
-        id: editingId || (Math.max(...products.map(p => p.id)) + 1),
+      const body = {
         title,
         author,
         category: document.getElementById("p-category").value,
         price,
-        originalPrice: origPrice,
         stock,
-        emoji: document.getElementById("p-emoji").value || "📚",
-        description: document.getElementById("p-desc").value,
-        isNew: document.getElementById("p-new").checked,
-        isBestseller: document.getElementById("p-bestseller").checked,
-        rating: 4.5,
+        isbn: document.getElementById("p-isbn").value.trim() || null,
+        rating: parseFloat(document.getElementById("p-rating").value) || 4.0,
+        thumbnail: document.getElementById("p-thumbnail").value.trim() || "",
+        description: document.getElementById("p-desc").value.trim() || "",
         reviews: 0,
       };
 
-      if (editingId) {
-        const idx = products.findIndex(p => p.id === editingId);
-        products[idx] = product;
-        showToast("Product updated successfully!", "success");
-      } else {
-        products.push(product);
-        showToast("Product added successfully!", "success");
-      }
+      try {
+        const url = editingId ? `/api/books/${editingId}` : "/api/books";
+        const method = editingId ? "PUT" : "POST";
 
-      localStorage.setItem("pt_products", JSON.stringify(products));
-      closeProductModal();
-      renderProducts();
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || "Lỗi khi lưu sách", "error");
+          return;
+        }
+
+        showToast(editingId ? "Cập nhật thành công!" : "Thêm sách thành công!", "success");
+        closeProductModal();
+        await loadProducts();
+      } catch (e) {
+        showToast("Lỗi kết nối server", "error");
+      }
     }
 
-    function deleteProduct(id) {
+    // ── Xóa (DELETE) ─────────────────────────────────────────
+    async function deleteProduct(id) {
       const p = products.find(x => x.id === id);
-      if (!confirm(`Delete "${p?.title}"? This cannot be undone.`)) return;
-      products = products.filter(x => x.id !== id);
-      localStorage.setItem("pt_products", JSON.stringify(products));
-      showToast("Product deleted", "info");
-      renderProducts();
+      if (!confirm(`Xóa sách "${p?.title}"? Hành động này không thể hoàn tác.`)) return;
+
+      try {
+        const res = await fetch(`/api/books/${id}`, { method: "DELETE" });
+        if (!res.ok) {
+          showToast("Không thể xóa sách", "error");
+          return;
+        }
+        showToast("Đã xóa sách", "info");
+        await loadProducts();
+      } catch (e) {
+        showToast("Lỗi kết nối server", "error");
+      }
+    }
+
+    // ── Helper ───────────────────────────────────────────────
+    function categoryEmoji(cat) {
+      const map = {
+        "Fiction": "📚", "Science": "🔬", "History": "🏛️",
+        "Self-Help": "🧘", "Biography": "🎓", "Business": "💼",
+        "Children": "🧸", "General": "📖", "Non-Fiction": "💡",
+      };
+      if (!cat) return "📖";
+      for (const key of Object.keys(map)) {
+        if (cat.toLowerCase().includes(key.toLowerCase())) return map[key];
+      }
+      return "📖";
     }
 
     document.getElementById("product-modal")?.addEventListener("click", function (e) {
       if (e.target === this) closeProductModal();
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (checkAdminAccess()) loadProducts();
     });
   </script>
 </body>
